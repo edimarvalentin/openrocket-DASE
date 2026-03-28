@@ -5,18 +5,16 @@ import info.openrocket.core.document.Simulation;
 import info.openrocket.core.file.GeneralRocketLoader;
 import info.openrocket.core.models.wind.PinkNoiseWindModel;
 import info.openrocket.core.models.wind.WindModelType;
-import info.openrocket.core.rocketcomponent.Rocket;
-import info.openrocket.core.rocketcomponent.RocketComponent;
+import info.openrocket.core.rocketcomponent.*;
+import info.openrocket.core.rocketcomponent.position.AxialMethod;
 import info.openrocket.core.simulation.FlightData;
 import info.openrocket.core.simulation.SimulationOptions;
-import info.openrocket.core.startup.Application;
 import info.openrocket.core.startup.OpenRocketCore;
 import info.openrocket.core.util.GeodeticComputationStrategy;
 
 
 import java.io.File;
 import java.util.List;
-
 
 public class OpenRocket {
 
@@ -38,13 +36,6 @@ public class OpenRocket {
             System.err.println("Failed to load rocket from file: " + e.getMessage());
             return null;
         }
-    }
-
-    public void setRocketTubeLength(double length){
-        RocketComponent sustainer = rocket.getChild(0);
-        List<RocketComponent> parts = sustainer.getChildren();
-
-        // Logic to modify parts...
     }
 
 
@@ -88,6 +79,7 @@ public class OpenRocket {
         options.setMaxSimulationTime(1200);
     }
 
+
     public void runSimulation(){
         try {
             sim.simulate();
@@ -97,21 +89,99 @@ public class OpenRocket {
         }
     }
 
+    public void setRocketTubeLength(double length){
+        RocketComponent sustainer = rocket.getChild(0);
+        List<RocketComponent> parts = sustainer.getChildren();
 
-    public void setRocketConeHeight(double height){
-
+        // Find the tube
+        for (RocketComponent part : parts) {
+            if (part.getComponentName().equals("Body Tube")) {
+                BodyTube tube = (BodyTube) part;
+                tube.setLength(length);
+                return;
+            }
+        }
     }
 
-    public void setRocketFinPlacement(double placement){
+    public void setRocketConeLength(double length){
+        RocketComponent sustainer = rocket.getChild(0);
+        List<RocketComponent> parts = sustainer.getChildren();
 
+        // Find the cone
+        for(RocketComponent part : parts){
+            if(part.getComponentName().equals("Nose Cone")){
+                NoseCone cone = (NoseCone) part;
+                cone.setLength(length);
+                return;
+            }
+        }
+    }
+
+    public void setRocketFinRelativePlacement(double displacement){
+        RocketComponent sustainer = rocket.getChild(0);
+        List<RocketComponent> parts = sustainer.getChildren();
+        // Find the fins
+        for(RocketComponent part : parts){
+            if(part.getComponentName().equals("BodyTube")){
+                List<RocketComponent> children = part.getChildren();
+                for(RocketComponent child : children){
+                    if(child.getComponentName().equals("Freeform Fin Set")){
+                        FreeformFinSet fins = (FreeformFinSet) child;
+                        fins.setAxialMethod(AxialMethod.BOTTOM);
+                        fins.setAxialOffset(displacement);
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     public void setRocketConeShape(String type){
+        RocketComponent sustainer = rocket.getChild(0);
+        List<RocketComponent> parts = sustainer.getChildren();
 
+        // Find the cone
+        for(RocketComponent part : parts){
+            if(part.getComponentName().equals("Nose Cone")){
+                NoseCone cone = (NoseCone) part;
+                if (type.equals("conical")){
+                    cone.setShapeType(Transition.Shape.CONICAL);
+                } else if (type.equals("ellipsoid")) {
+                    cone.setShapeType(Transition.Shape.ELLIPSOID);
+                }
+            }
+        }
     }
 
     public void setNumFins(int num){
+        RocketComponent sustainer = rocket.getChild(0);
+        List<RocketComponent> parts = sustainer.getChildren();
+        // Find the fins
+        for(RocketComponent part : parts){
+            if(part.getComponentName().equals("BodyTube")){
+                List<RocketComponent> children = part.getChildren();
+                for(RocketComponent child : children){
+                    if(child.getComponentName().equals("Freeform Fin Set")){
+                        FreeformFinSet fins = (FreeformFinSet) child;
+                        fins.setFinCount(num);
+                        return;
+                    }
+                }
+            }
+        }
+    }
 
+    public void setWindVelocity(double velocity)
+    {
+        SimulationOptions options = sim.getOptions();
+        PinkNoiseWindModel windModel = options.getAverageWindModel();
+        windModel.setAverage(velocity);
+    }
+
+    public void setRodAngle(double angle_rod)
+    {
+        SimulationOptions options = sim.getOptions();
+        options.setLaunchRodAngle(angle_rod);
     }
 
     public double getApogee(){
