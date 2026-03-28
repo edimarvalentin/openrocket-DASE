@@ -3,6 +3,8 @@ package org.dase;
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.file.GeneralRocketLoader;
+import info.openrocket.core.file.GeneralRocketSaver;
+import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.models.wind.PinkNoiseWindModel;
 import info.openrocket.core.models.wind.WindModelType;
 import info.openrocket.core.rocketcomponent.*;
@@ -14,7 +16,10 @@ import info.openrocket.core.util.GeodeticComputationStrategy;
 
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
+
+import static java.lang.Math.toRadians;
 
 public class OpenRocket {
 
@@ -38,6 +43,15 @@ public class OpenRocket {
         }
     }
 
+    public void saveRocket(File file){
+        try{
+            GeneralRocketSaver saver = new GeneralRocketSaver();
+            saver.save(file, rocket.getDocument());
+        } catch (Exception e) {
+            System.err.println("Failed to save rocket to file: " + e.getMessage());
+        }
+    }
+
 
     public void setSimulation(){
         sim = new Simulation(rocket);
@@ -49,9 +63,9 @@ public class OpenRocket {
         options.setLaunchLongitude(-110.94395);
 
         // Launch Rod
-        options.setLaunchRodLength(100); // cm
-        options.setLaunchRodAngle(5); // deg
-        options.setLaunchRodDirection(90); // deg
+        options.setLaunchRodLength(5); // m
+        options.setLaunchRodAngle(0); // rad
+        options.setLaunchIntoWind(true);
 
         options.setISAAtmosphere(true); // Use International Standard Atmosphere
 
@@ -66,10 +80,10 @@ public class OpenRocket {
         windModel.setAverage(2); // m/s
 
         // standard deviation
-        windModel.setStandardDeviation(0.2); // m/s
+       // windModel.setStandardDeviation(0); // m/s
 
         // turbulence intensity
-        windModel.setTurbulenceIntensity(10); // %
+        windModel.setTurbulenceIntensity(0.08); // %
 
         // direction
         windModel.setDirection(90); // deg
@@ -77,13 +91,18 @@ public class OpenRocket {
         // Sim clock
         options.setTimeStep(0.05);
         options.setMaxSimulationTime(1200);
+
+        FlightConfiguration conf = rocket.getSelectedConfiguration();
+
     }
 
 
     public void runSimulation(){
         try {
+            String conf = sim.getStatusDescription();
             sim.simulate();
-            sim.getSimulatedData();
+            SimulationOptions simops = sim.getSimulatedConditions();
+            int i = 0;
         } catch (Exception e){
             System.err.println("Failed to run sim: " + e.getMessage());
         }
@@ -95,7 +114,7 @@ public class OpenRocket {
 
         // Find the tube
         for (RocketComponent part : parts) {
-            if (part.getComponentName().equals("Body Tube")) {
+            if (part.getName().equals("Body Tube 1")) {
                 BodyTube tube = (BodyTube) part;
                 tube.setLength(length);
                 return;
@@ -109,7 +128,7 @@ public class OpenRocket {
 
         // Find the cone
         for(RocketComponent part : parts){
-            if(part.getComponentName().equals("Nose Cone")){
+            if(part.getName().equals("Nose Cone")){
                 NoseCone cone = (NoseCone) part;
                 cone.setLength(length);
                 return;
@@ -122,10 +141,10 @@ public class OpenRocket {
         List<RocketComponent> parts = sustainer.getChildren();
         // Find the fins
         for(RocketComponent part : parts){
-            if(part.getComponentName().equals("BodyTube")){
+            if(part.getName().equals("Body Tube 2")){
                 List<RocketComponent> children = part.getChildren();
                 for(RocketComponent child : children){
-                    if(child.getComponentName().equals("Freeform Fin Set")){
+                    if(child.getName().equals("Freeform Fin Set")){
                         FreeformFinSet fins = (FreeformFinSet) child;
                         fins.setAxialMethod(AxialMethod.BOTTOM);
                         fins.setAxialOffset(displacement);
@@ -142,7 +161,7 @@ public class OpenRocket {
 
         // Find the cone
         for(RocketComponent part : parts){
-            if(part.getComponentName().equals("Nose Cone")){
+            if(part.getName().equals("Nose Cone")){
                 NoseCone cone = (NoseCone) part;
                 if (type.equals("conical")){
                     cone.setShapeType(Transition.Shape.CONICAL);
@@ -158,10 +177,10 @@ public class OpenRocket {
         List<RocketComponent> parts = sustainer.getChildren();
         // Find the fins
         for(RocketComponent part : parts){
-            if(part.getComponentName().equals("BodyTube")){
+            if(part.getName().equals("Body Tube 2")){
                 List<RocketComponent> children = part.getChildren();
                 for(RocketComponent child : children){
-                    if(child.getComponentName().equals("Freeform Fin Set")){
+                    if(child.getName().equals("Freeform Fin Set")){
                         FreeformFinSet fins = (FreeformFinSet) child;
                         fins.setFinCount(num);
                         return;
@@ -181,8 +200,9 @@ public class OpenRocket {
     public void setRodAngle(double angle_rod)
     {
         SimulationOptions options = sim.getOptions();
-        options.setLaunchRodAngle(angle_rod);
+        options.setLaunchRodAngle(toRadians(angle_rod));
     }
+
 
     public double getApogee(){
         FlightData results = sim.getSimulatedData();

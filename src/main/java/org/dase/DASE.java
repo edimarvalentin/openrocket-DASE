@@ -44,13 +44,13 @@ public class DASE {
             {
                 continue; // This is the column header. Not parseable for us here
             }
-            int treatment = (int) row.getCell(0).getNumericCellValue(); // Tmt#
-            int mc = (int) row.getCell(1).getNumericCellValue(); // MC#
-            double L_tube = row.getCell(2).getNumericCellValue() * CM_TO_METERS; // tube length
-            double L_cone = row.getCell(3).getNumericCellValue() * CM_TO_METERS; // cone length
-            double d_f = row.getCell(4).getNumericCellValue() * CM_TO_METERS; // fin displacement
-            double v_wnd = row.getCell(5).getNumericCellValue(); // wind velocity
-            double angle_rod = row.getCell(6).getNumericCellValue(); // rod angle (into wind)
+            int treatment       = (int) row.getCell(0).getNumericCellValue();           // Tmt#
+            int mc              = (int) row.getCell(1).getNumericCellValue();           // MC#
+            double L_tube       = row.getCell(2).getNumericCellValue() * CM_TO_METERS;  // tube length
+            double L_cone       = row.getCell(3).getNumericCellValue() * CM_TO_METERS;  // cone length
+            double d_f          = row.getCell(4).getNumericCellValue() * CM_TO_METERS;  // fin displacement
+            double v_wnd        = row.getCell(5).getNumericCellValue();                 // wind velocity
+            double angle_rod    = row.getCell(6).getNumericCellValue();                 // rod angle (into wind)
 
             // Give the rocket a little treatment
             sim.setRocketTubeLength(L_tube);
@@ -66,7 +66,10 @@ public class DASE {
             System.out.println("Apogee: " + sim.getApogee());
 
             // Spit out the data (CUR OUT)
-
+            File outDir = new File("out/tmt"+treatment+"_mc"+mc +"/superbigbertha.ork");
+            if(outDir.mkdirs()){
+                sim.saveRocket(outDir);
+            }
         }
 
     }
