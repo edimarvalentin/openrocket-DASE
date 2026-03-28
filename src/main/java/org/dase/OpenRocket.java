@@ -4,7 +4,6 @@ import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.file.GeneralRocketLoader;
 import info.openrocket.core.file.GeneralRocketSaver;
-import info.openrocket.core.logging.WarningSet;
 import info.openrocket.core.models.wind.PinkNoiseWindModel;
 import info.openrocket.core.models.wind.WindModelType;
 import info.openrocket.core.rocketcomponent.*;
@@ -16,7 +15,6 @@ import info.openrocket.core.util.GeodeticComputationStrategy;
 
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import static java.lang.Math.toRadians;
@@ -48,7 +46,7 @@ public class OpenRocket {
             GeneralRocketSaver saver = new GeneralRocketSaver();
             saver.save(file, rocket.getDocument());
         } catch (Exception e) {
-            System.err.println("Failed to save rocket to file: " + e.getMessage());
+            System.err.println("Failed to save rocket output: " + e.getMessage());
         }
     }
 
@@ -63,7 +61,7 @@ public class OpenRocket {
         options.setLaunchLongitude(-110.94395);
 
         // Launch Rod
-        options.setLaunchRodLength(5); // m
+        options.setLaunchRodLength(1); // m
         options.setLaunchRodAngle(0); // rad
         options.setLaunchIntoWind(true);
 
@@ -92,8 +90,6 @@ public class OpenRocket {
         options.setTimeStep(0.05);
         options.setMaxSimulationTime(1200);
 
-        FlightConfiguration conf = rocket.getSelectedConfiguration();
-
     }
 
 
@@ -108,7 +104,7 @@ public class OpenRocket {
         }
     }
 
-    public void setRocketTubeLength(double length){
+    public void setRocketTube1Length(double length){
         RocketComponent sustainer = rocket.getChild(0);
         List<RocketComponent> parts = sustainer.getChildren();
 
@@ -121,6 +117,21 @@ public class OpenRocket {
             }
         }
     }
+
+    public void setRocketTube2Length(double length){
+        RocketComponent sustainer = rocket.getChild(0);
+        List<RocketComponent> parts = sustainer.getChildren();
+
+        // Find the tube
+        for (RocketComponent part : parts) {
+            if (part.getName().equals("Body Tube 2")) {
+                BodyTube tube = (BodyTube) part;
+                tube.setLength(length);
+                return;
+            }
+        }
+    }
+
 
     public void setRocketConeLength(double length){
         RocketComponent sustainer = rocket.getChild(0);
@@ -208,4 +219,13 @@ public class OpenRocket {
         FlightData results = sim.getSimulatedData();
         return results.getMaxAltitude();
     }
+
+    public String getSimConditions(){
+        return sim.getSimulatedConditions().toString();
+    }
+
+    public String getFlightConfiguration(){
+        return sim.getActiveConfiguration().toString();
+    }
+
 }
